@@ -89,6 +89,9 @@
         console.log('num', num, cb.checked)
         socket.emit('light', {lightNum: num, state: Number(cb.checked)});
       }
+      socket.on('news', data => {
+        console.log(data)
+      })
       socket.on('initialState', data => {
         console.log('initialState', data)
         light1.checked = data.light1state;
