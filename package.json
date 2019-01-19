@@ -4,7 +4,11 @@
   "description": "learn docker nodejs",
   "main": "app.js",
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "moment": "^2.23.0",
+    "mqtt": "^2.18.8",
+    "node-cron": "^2.0.3",
+    "socket.io": "^2.2.0"
   },
   "devDependencies": {},
   "scripts": {
