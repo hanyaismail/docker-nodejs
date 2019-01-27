@@ -1,43 +1,50 @@
 const cron = require('node-cron');
 const moment = require('moment');
-let taskArr = [];
 
-function stopAllTask() {
-  console.log('stopping task');
-  taskArr.forEach(task => {
-    task.stop();
-  })
-  taskArr = [];
-  console.log('stop taskArr length', taskArr.length);
-}
+class Scheduler {
+  constructor(mqttClient, io) {
+    this._mqttClient = mqttClient
+    this._io = io
+    this._taskArr = []
+  }
 
-function createSchedule(mqttClient, io, routineArr) {
-  console.log(routineArr);
-
-  routineArr.forEach(routine => {
-    console.log(routine)
-    routine.schedules.forEach(item => {
-      const task = cron.schedule(`${item.time}`, () => {
-        console.log(moment());
-  
-        mqttClient.publish(`inTopic_ismail220a/${routine.type}/${routine.num}`, '1');
-        
-        let data = {}
-        data.state = 1;
-        data[`${routine.type}Num`] = routine.num
-        
-        io.emit(`${routine.type}Change`, data);
-  
-        setTimeout(() => {
-          data.state = 0;
-          mqttClient.publish(`inTopic_ismail220a/${routine.type}/${routine.num}`, '0');
-          io.emit(`${routine.type}Change`, data);
-        }, item.delayToOff)
-      });
-      taskArr.push(task);
+  stopAllTask() {
+    console.log('stopping task');
+    this._taskArr.forEach(task => {
+      task.stop();
     })
-  })
-  console.log('create taskArr length', taskArr.length);
+    this._taskArr = [];
+    console.log('stop taskArr length', taskArr.length);
+  }
+
+  createTask(routineArr) {
+    console.log(routineArr);
+
+    routineArr.forEach(routine => {
+      console.log(routine)
+      routine.schedules.forEach(item => {
+        const task = cron.schedule(`${item.time}`, () => {
+          console.log(moment());
+    
+          this._mqttClient.publish(`inTopic_ismail220a/${routine.type}/${routine.num}`, '1');
+          
+          let data = {}
+          data.state = 1;
+          data[`${routine.type}Num`] = routine.num
+          
+          this._io.emit(`${routine.type}Change`, data);
+    
+          setTimeout(() => {
+            data.state = 0;
+            this._mqttClient.publish(`inTopic_ismail220a/${routine.type}/${routine.num}`, '0');
+            this._io.emit(`${routine.type}Change`, data);
+          }, item.delayToOff)
+        });
+        taskArr.push(task);
+      })
+    })
+    console.log('create taskArr length', taskArr.length);
+  }
 }
 
-module.exports = {stopAllTask, createSchedule};
+module.exports = Scheduler;

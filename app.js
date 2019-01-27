@@ -4,13 +4,16 @@ const app = require('express')();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 const mqtt = require('mqtt');
+const Scheduler = require('./test-scheduler');
 const mqttClient = mqtt.connect('ws://iot.eclipse.org:80/ws');
-const { stopAllTask, createSchedule } = require('./test-scheduler');
+// const { stopAllTask, createSchedule } = require('./test-scheduler');
 const PORT = 8080;
 
 const schedules = [
   '*/5 * * * * *',
 ]
+
+const schedulerApi = new Scheduler(mqttClient, io);
 
 mqttClient.on('connect', () => {
   console.log('connected ecplise');
@@ -69,8 +72,8 @@ const routineSchedule = [
     num: '1',
     schedules: [
       {
-        time: '0 42 21 * * *',
-        delayToOff: 60000,
+        time: '0 32 23 * * *',
+        delayToOff: 10000,
       }
     ],
   },
@@ -102,7 +105,7 @@ const routineCb = () => {
   }, 300000)
 }
 
-createSchedule(mqttClient, io, routineSchedule);
+schedulerApi.createTask(routineSchedule);
 
 app.get('/', (req, res) => {
   fs.readFile(__dirname + '/public/index.html', (err, data) => {
