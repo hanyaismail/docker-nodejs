@@ -14,7 +14,7 @@ class Scheduler {
       task.stop();
     })
     this._taskArr = [];
-    console.log('stop taskArr length', taskArr.length);
+    console.log('stop taskArr length', this._taskArr.length);
   }
 
   createTask(routineArr) {
@@ -40,10 +40,10 @@ class Scheduler {
             this._io.emit(`${routine.type}Change`, data);
           }, item.delayToOff)
         });
-        taskArr.push(task);
+        this._taskArr.push(task);
       })
     })
-    console.log('create taskArr length', taskArr.length);
+    console.log('create taskArr length', this._taskArr.length);
   }
 }
 
