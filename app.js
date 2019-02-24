@@ -1,19 +1,20 @@
 const fs = require('fs');
 const moment = require('moment');
-const app = require('express')();
+const express = require('express');
+const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 const mqtt = require('mqtt');
 const Scheduler = require('./test-scheduler');
 const mqttClient = mqtt.connect('ws://iot.eclipse.org:80/ws');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const jade = require('jade');
 // const { stopAllTask, createSchedule } = require('./test-scheduler');
 const PORT = 8080;
 
-const schedules = [
-  '*/5 * * * * *',
-]
-
-const schedulerApi = new Scheduler(mqttClient, io);
+// const schedulerApi = new Scheduler(mqttClient, io);
 
 mqttClient.on('connect', () => {
   console.log('connected ecplise');
@@ -89,34 +90,104 @@ const routineSchedule = [
   }
 ];
 
-const routineCb = () => {
-  console.log(moment())
-  mqttClient.publish('inTopic_ismail220a', '1');
-  io.emit('foggerChange', {
-    state: 1,
-    foggerNum: '1',
-  });
-  setTimeout(() => {
-    mqttClient.publish('inTopic_ismail220a', '0');
-    io.emit('foggerChange', {
-      state: 0,
-      foggerNum: '1',
-    });
-  }, 300000)
-}
+// create schedule
+// schedulerApi.createTask(routineSchedule);
 
-schedulerApi.createTask(routineSchedule);
+app.set('view engine', 'jade');
 
-app.get('/', (req, res) => {
-  fs.readFile(__dirname + '/public/index.html', (err, data) => {
-    if (err) {
-      res.writeHead(404, {'Content-Type': 'text/html'});
-      return res.end("404 Not Found");
+app.use(express.static(__dirname + '/public'));
+
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json())
+
+app.use(cookieParser());
+
+// initialize express-session to allow us track the logged-in user across sessions.
+app.use(session({
+    key: 'user_sid',
+    secret: 'somerandonstuffs',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        expires: 600000
     }
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.write(data);
-    return res.end();
-  });
+}));
+
+// This middleware will check if user's cookie is still saved in browser and user is not set, then automatically log the user out.
+// This usually happens when you stop your express server after login, your cookie still remains saved in the browser.
+app.use((req, res, next) => {
+  if (req.cookies.user_sid && !req.session.user) {
+      res.clearCookie('user_sid');        
+  }
+  next();
+});
+
+// middleware function to check for logged-in users
+const sessionChecker = (req, res, next) => {
+  if (req.session.user && req.cookies.user_sid) {
+      console.log('good')
+      res.redirect('/ndasbor');
+  } else {
+      next();
+  }    
+};
+
+const users = [
+  {
+    username: "ninja",
+    password: "ninja",
+  },
+  {
+    username: "coola",
+    password: "coola",
+  }
+]
+
+// route for user Login
+app.route('/login')
+    .get(sessionChecker, (req, res) => {
+      res.render('login')
+    })
+    .post((req, res) => {
+        const username = req.body.username,
+              password = req.body.password;
+
+        const user = users.find(user => user.username === username)
+        console.log('found user', user)
+        if(!user) {
+          console.log('no user')
+          return res.redirect('/login');
+        }
+
+        if(user.password !== password) {
+          console.log('wrong password')
+          return res.redirect('/login');
+        }
+
+        req.session.user = user;
+        res.redirect('/ndasbor');
+    });
+
+app.get('/ndasbor', (req, res) => {
+  if (req.session.user && req.cookies.user_sid) {
+    res.render('dashboard');
+  } else {
+    res.redirect('/login');
+  }
+});
+
+// route for user logout
+app.get('/logout', (req, res) => {
+  if (req.session.user && req.cookies.user_sid) {
+      res.clearCookie('user_sid');
+      res.redirect('/');
+  } else {
+      res.redirect('/login');
+  }
+});
+
+app.get('/', sessionChecker, (req, res) => {
+  res.redirect('/login');
 });
 
 server.listen(PORT, () => {

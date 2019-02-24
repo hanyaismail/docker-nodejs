@@ -1,0 +1,17 @@
+extends ./main.jade  
+  
+block content
+  .wrapper.fadeInDown
+    #formContent
+      // Tabs Titles
+      // Icon
+      .fadeIn.first
+        | Please Login
+      // Login Form
+      form(action="/login", method="post")
+        input#login.fadeIn.second(type='text', name='username', placeholder='login')
+        input#password.fadeIn.third(type='password', name='password', placeholder='password')
+        input.fadeIn.fourth(type='submit', value='Log In')
+      // Remind Passowrd
+      #formFooter
+        a.underlineHover(href='#') Forgot Password?

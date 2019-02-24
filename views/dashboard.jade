@@ -1,0 +1,86 @@
+extends ./main.jade  
+  
+block content
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js')
+  script. 
+    var socket = io()
+    // var ligh1 = document.getElementById('light1')
+    // var ligh2 = document.getElementById('light2')
+    // var ligh3 = document.getElementById('light3')
+    const handleFoggerClick = (cb, num) => {
+      console.log('num', num, cb.checked)
+      socket.emit('fogger', {foggerNum: num, state: Number(cb.checked)});
+    }
+    const handleLightClick = (cb, num) => {
+      console.log('num', num, cb.checked)
+      socket.emit('light', {lightNum: num, state: Number(cb.checked)});
+    }
+    socket.on('news', data => {
+      console.log(data)
+    })
+    socket.on('initialState', data => {
+      console.log('initialState', data)
+      light1.checked = data.light1state;
+      light2.checked = data.light2state;
+      fogger1.checked = data.fogger1state;
+      fogger2.checked = data.fogger2state;
+    })
+    socket.on('lightChange', data => {
+      console.log('data', data)
+      switch (data.lightNum) {
+        case '1':
+          light1.checked = data.state
+          break;
+        case '2':
+          light2.checked = data.state
+          break;
+        case '3':
+          light3.checked = data.state
+          break;
+      }
+    })
+    socket.on('foggerChange', data => {
+      console.log('data', data)
+      switch (data.foggerNum) {
+        case '1':
+          fogger1.checked = data.state
+          break;
+        case '2':
+          fogger2.checked = data.state
+          break;
+        case '3':
+          fogger3.checked = data.state
+          break;
+      }
+    })
+
+  .main
+    h1.sm-font Cooltura IoT Prototype v0.1
+    .container.bg-pink
+      .row
+        .col-6
+          h1.sm-font Fogger 1
+          label.switch
+            input#fogger1(onclick="handleFoggerClick(this, '1')", type='checkbox')
+            span.slider.round
+          h1.sm-font Fogger 2
+          label.switch
+            input#fogger2(onclick="handleFoggerClick(this, '2')", type='checkbox')
+            span.slider.round
+          h1.sm-font Fogger 3
+          label.switch
+            input#fogger3(onclick="handleFoggerClick(this, '3')", type='checkbox')
+            span.slider.round
+        .col-6
+          h1.sm-font Light 1
+          label.switch
+            input#light1(onclick="handleLightClick(this, '1')", type='checkbox')
+            span.slider
+          h1.sm-font Light 2
+          label.switch
+            input#light2(onclick="handleLightClick(this, '2')", type='checkbox')
+            span.slider
+          h1.sm-font Light 3
+          label.switch
+            input#light3(onclick="handleLightClick(this, '3')", type='checkbox')
+            span.slider
